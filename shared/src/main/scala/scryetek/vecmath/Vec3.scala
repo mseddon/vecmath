@@ -13,6 +13,11 @@ case class Vec3(var x: Float, var y: Float, var z: Float) {
     this
   }
 
+  def set(v: Vec3): Vec3 = {
+    x = v.x; y = v.y; z = v.z
+    this
+  }
+
   def +(o: Vec3): Vec3  = Vec3(x+o.x, y+o.y, z+o.z)
   def -(o: Vec3): Vec3  = Vec3(x-o.x, y-o.y, z-o.z)
   def *(o: Vec3): Float = x*o.x + y*o.y + z*o.z

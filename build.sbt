@@ -9,6 +9,7 @@ lazy val root = project.in(file(".")).
 
 lazy val vecMath = crossProject.in(file(".")).
   settings(
+    scalaVersion := "2.11.6",
     organization := "com.scryetek",
     name := "vecmath",
     version := "0.1-SNAPSHOT",

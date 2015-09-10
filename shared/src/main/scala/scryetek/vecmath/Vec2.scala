@@ -14,8 +14,8 @@ case class Vec2(var x: Float, var y: Float) {
   }
 
   def set(v: Vec2): Vec2 = {
-    this.x = x
-    this.y = y
+    this.x = v.x
+    this.y = v.y
     this
   }
 

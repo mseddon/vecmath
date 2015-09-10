@@ -14,6 +14,11 @@ case class Vec4(var x: Float, var y: Float, var z: Float, var w: Float) {
     this
   }
 
+  def set(v: Vec4): Vec4 = {
+    x = v.x; y = v.y; z = v.z; w = v.w
+    this
+  }
+
   def +(o: Vec4): Vec4  = Vec4(x+o.x, y+o.y, z+o.z, w+o.w)
   def -(o: Vec4): Vec4  = Vec4(x-o.x, y-o.y, z-o.z, w-o.w)
   def *(o: Vec4): Float = x*o.x + y*o.y + z*o.z + w*o.w
