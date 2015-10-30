@@ -25,6 +25,13 @@ case class Vec4(var x: Float, var y: Float, var z: Float, var w: Float) {
   def *(s: Float): Vec4 = Vec4(x*s, y*s, z*s, w*s)
   def /(s: Float): Vec4 = this * (1/s)
 
+  def *(m: Mat4): Vec4 =
+    Vec4(
+      x * m.m00 + y * m.m01 + z * m.m02 + w * m.m03,
+      x * m.m10 + y * m.m11 + z * m.m12 + w * m.m13,
+      x * m.m20 + y * m.m21 + z * m.m22 + w * m.m23,
+      x * m.m30 + y * m.m31 + z * m.m32 + w * m.m33)
+
   def unary_- : Vec4 = new Vec4(-x, -y, -z, -w)
 
   def negate: Vec4 = {

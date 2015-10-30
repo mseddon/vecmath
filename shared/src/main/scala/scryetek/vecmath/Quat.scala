@@ -7,7 +7,7 @@ class Quat(var x: Float, var y: Float, var z: Float, var w: Float) {
   def this() = this(0, 0, 0, 1)
 
   def set(x: Float, y: Float, z: Float, w: Float): Quat = {
-    this.x = x; this.y = y; this.z = z; this.w = w;
+    this.x = x; this.y = y; this.z = z; this.w = w
     this
   }
 
@@ -16,7 +16,7 @@ class Quat(var x: Float, var y: Float, var z: Float, var w: Float) {
 
 
   def add(q: Quat): Quat = {
-    x += q.x; y += q.y; z += q.z; w += q.w;
+    x += q.x; y += q.y; z += q.z; w += q.w
     this
   }
 
@@ -73,6 +73,7 @@ class Quat(var x: Float, var y: Float, var z: Float, var w: Float) {
   def rotateZ(angle: Float): Quat =
     rotateZInto(this, angle)
 
+  // re-normalizes this quaternion
   def calculateWInto(out: Quat): Quat =
     out.set(x, y, z, -Math.sqrt(Math.abs(1-x*x - y*y - z*z)).toFloat)
 
@@ -142,4 +143,39 @@ class Quat(var x: Float, var y: Float, var z: Float, var w: Float) {
     scale(magnitude)
 
   // fromMat3
+  override def toString = s"Quat($x, $y, $z, $w)"
+  
+  def toEuler: Vec3 = {
+    val sqw = w*w
+    val sqx = x*x
+    val sqy = y*y
+    val sqz = z*z
+    val unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
+    val test = x*y + z*w
+    if (test > 0.499*unit) // singularity at north pole
+      Vec3(2 * math.atan2(x,w).toFloat, Math.PI.toFloat/2, 0)
+    else if (test < -0.499*unit) // singularity at south pole
+      Vec3(-2 * math.atan2(x,w).toFloat, -Math.PI.toFloat/2, 0)
+    else
+      Vec3(math.atan2(2*y*w-2*x*z , sqx - sqy - sqz + sqw).toFloat,
+           math.asin(2*test/unit).toFloat,
+           math.atan2(2*x*w-2*y*z , -sqx + sqy - sqz + sqw).toFloat)
+  }
+}
+
+object Quat {
+  def fromEuler(x: Float, y: Float, z: Float): Quat = {
+    val sinX = math.sin(x*0.5f).toFloat
+    val cosX = math.cos(x*0.5f).toFloat
+    val sinY = math.sin(y*0.5f).toFloat
+    val cosY = math.cos(y*0.5f).toFloat
+    val sinZ = math.sin(z*0.5f).toFloat
+    val cosZ = math.cos(z*0.5f).toFloat
+    val cosXY = cosX*cosY
+    val sinXY = sinX*sinY
+    new Quat(sinZ*cosXY     - cosZ*sinXY,
+             cosZ*sinX*cosY + sinZ*cosX*sinY,
+             cosZ*cosX*sinY - sinZ*sinX*cosY,
+             cosZ*cosXY     + sinZ*sinXY)
+  }
 }

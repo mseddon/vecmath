@@ -35,6 +35,24 @@ class Mat4(var m00: Float, var m01: Float, var m02: Float, var m03: Float,
     this
   }
 
+
+  /** Multiply a vector by this matrix */
+  def *(v: Vec4): Vec4 =
+    Vec4(
+      v.x * m00 + v.y * m10 + v.z * m20 + v.w * m30,
+      v.x * m01 + v.y * m11 + v.z * m21 + v.w * m31,
+      v.x * m02 + v.y * m12 + v.z * m22 + v.w * m32,
+      v.x * m03 + v.y * m13 + v.z * m23 + v.w * m33)
+
+  /** Multiply a vector by this matrix */
+  def *(v: Vec3): Vec3 = {
+    val x = v.x * m00 + v.y * m10 + v.z * m20 + m30
+    val y = v.x * m01 + v.y * m11 + v.z * m21 + m31
+    val z = v.x * m02 + v.y * m12 + v.z * m22 + m32
+    val w = 1/(v.x * m03 + v.y * m13 + v.z * m23 + m33)
+    Vec3(x*w, y*w, z*w)
+  }
+
   def setIdentity: Mat4 = {
     m00 = 1; m01 = 0; m02 = 0; m03 = 0
     m10 = 0; m11 = 1; m12 = 0; m13 = 0

@@ -24,6 +24,14 @@ case class Vec3(var x: Float, var y: Float, var z: Float) {
   def *(s: Float): Vec3 = Vec3(x * s, y*s, z*s)
   def /(s: Float): Vec3 = this * (1/s)
 
+  def *(m: Mat4): Vec3 = {
+    val x1 = x * m.m00 + y * m.m01 + z + m.m02 + m.m03
+    val y1 = x * m.m10 + y * m.m11 + z + m.m12 + m.m13
+    val z1 = x * m.m20 + y * m.m21 + z + m.m22 + m.m23
+    val w = 1/(x * m.m30 + y * m.m31 + z * m.m23 + m.m33)
+    Vec3(x1*w, y1*w, z1*w)
+  }
+
   def unary_- : Vec3 = Vec3(-x, -y, -z)
 
   def negate: Vec3 = {
