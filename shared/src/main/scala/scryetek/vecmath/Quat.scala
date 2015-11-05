@@ -1,181 +1,257 @@
 package scryetek.vecmath
 
-/**
- * Created by Matt on 29/06/2014.
- */
-class Quat(var x: Float, var y: Float, var z: Float, var w: Float) {
-  def this() = this(0, 0, 0, 1)
-
-  def set(x: Float, y: Float, z: Float, w: Float): Quat = {
-    this.x = x; this.y = y; this.z = z; this.w = w
+@inline
+final class Quat(var x: Float, var y: Float, var z: Float, var w: Float) {
+  @inline
+  def set(x: Float = this.x, y: Float = this.y, z: Float = this.z, w: Float = this.w) = {
+    this.x = x
+    this.y = y
+    this.z = z
+    this.w = w
     this
   }
 
+  @inline
   def set(q: Quat): Quat =
     set(q.x, q.y, q.z, q.w)
 
+  @inline
+  def +(q: Quat): Quat =
+    Quat(x + q.x, y + q.y, z + q.z, w + q.w)
 
-  def add(q: Quat): Quat = {
-    x += q.x; y += q.y; z += q.z; w += q.w
-    this
-  }
+  @inline
+  def add(q: Quat, out: Quat = this): Quat =
+    out.set(x + q.x, y + q.y, z + q.z, w + q.w)
 
-  // rotationTo
-  // setAxis
-  def setIdentity: Quat =
-    set(0, 0, 0, 1)
+  @inline
+  def add(x: Float, y: Float, z: Float, w: Float, out: Quat): Quat =
+    out.set(this.x + x, this.y + y, this.z + z, this.w + w)
 
-  def setAngleAxis(angle: Float, axis: Vec3): Quat = {
-    val halfAngle = angle * 0.5f
-    val s = Math.sin(halfAngle).toFloat
-    set(s*x, s*y, s*z, Math.cos(halfAngle).toFloat)
-  }
+  @inline
+  def add(x: Float, y: Float, z: Float, w: Float): Quat =
+    add(x, y, z, w, this)
 
-  def mulInto(out: Quat, q: Quat): Quat =
+  @inline
+  def -(q: Quat): Quat =
+    Quat(x - q.x, y - q.y, z - q.z, w - q.w)
+
+
+  @inline
+  def sub(q: Quat, out: Quat = this): Quat =
+    out.set(x - q.x, y - q.y, z - q.z, w - q.w)
+
+  @inline
+  def sub(x: Float, y: Float, z: Float, w: Float, out: Quat): Quat =
+    out.set(this.x - x, this.y - y, this.z - z, this.w - w)
+
+  @inline
+  def sub(x: Float, y: Float, z: Float, w: Float): Quat =
+    sub(x, y, z, w, this)
+
+  @inline
+  def *(q: Quat): Quat =
+    Quat(x*q.w + w*q.x + y*q.z - z*q.y,
+         y*q.w + w*q.y + z*q.x - x*q.z,
+         z*q.w + w*q.z + x*q.y - y*q.x,
+         w*q.w - x*q.x - y*q.y - z*q.z)
+
+  @inline
+  def postMultiply(q: Quat, out: Quat = this): Quat =
     out.set(x*q.w + w*q.x + y*q.z - z*q.y,
-        y*q.w + w*q.y + z*q.x - x*q.z,
-        z*q.w + w*q.z + x*q.y - y*q.x,
-        w*q.w - x*q.x - y*q.y - z*q.z)
+            y*q.w + w*q.y + z*q.x - x*q.z,
+            z*q.w + w*q.z + x*q.y - y*q.x,
+            w*q.w - x*q.x - y*q.y - z*q.z)
 
-  def mul(q: Quat): Quat =
-    mulInto(this, q)
+  @inline
+  def *(v: Vec4): Vec4 =
+    (this * Quat(v.x, v.y, v.z, v.w) * this.conjugated).toVec4
 
-  def rotateXInto(out: Quat, angle: Float): Quat = {
-    val halfAngle = angle*0.5f
-    val bx = Math.sin(halfAngle).toFloat
-    val bw = Math.cos(halfAngle).toFloat
+  @inline
+  def *(v: Vec3): Vec3 = {
+    val ox = x + w*v.x + y*v.z - z*v.y
+    val oy = y + w*v.y + z*v.x - x*v.z
+    val oz = z + w*v.z + x*v.y - y*v.x
+    val ow = w - x*v.x - y*v.y - z*v.z
 
-    out.set(x*bw + w*bx, y*bw + z*bx, z*bw - y*bx, w*w  - x*bx)
+    val s = 1/(ow*w - ox * -x - oy * -y - oz * -z)
+    Vec3((ox*w + ow * -x + oy * -z - oz * -y)*s,
+         (oy*w + ow * -y + oz * -x - ox * -z)*s,
+         (oz*w + ow * -z + ox * -y - oy * -x)*s)
   }
 
-  def rotateX(angle: Float): Quat =
-    rotateXInto(this, angle)
+  @inline
+  def mul(v: Vec4, out: Vec4) = {
+    val ox = x*v.w + w*v.x + y*v.z - z*v.y
+    val oy = y*v.w + w*v.y + z*v.x - x*v.z
+    val oz = z*v.w + w*v.z + x*v.y - y*v.x
+    val ow = w*v.w - x*v.x - y*v.y - z*v.z
 
-  def rotateYInto(out: Quat, angle: Float): Quat = {
-    val halfAngle = angle*0.5f
-    val by = Math.sin(halfAngle).toFloat
-    val bw = Math.cos(halfAngle).toFloat
+    out.set(ox*w + ow * -x + oy * -z - oz * -y,
+            oy*w + ow * -y + oz * -x - ox * -z,
+            oz*w + ow * -z + ox * -y - oy * -x,
+            ow*w - ox * -x - oy * -y - oz * -z)
+  }
+  
+  def mul(v: Vec4): Vec4 =
+    mul(v, v)
 
-    set(x*bw - z*by, y*bw + w*by, z*bw + x*by, w*bw - y*by)
+  @inline
+  def mul(v: Vec3, out: Vec3) = {
+    val ox = x + w*v.x + y*v.z - z*v.y
+    val oy = y + w*v.y + z*v.x - x*v.z
+    val oz = z + w*v.z + x*v.y - y*v.x
+    val ow = w - x*v.x - y*v.y - z*v.z
+
+    val s = 1/(ow*w - ox * -x - oy * -y - oz * -z)
+    out.set((ox*w + ow * -x + oy * -z - oz * -y)*s,
+            (oy*w + ow * -y + oz * -x - ox * -z)*s,
+            (oz*w + ow * -z + ox * -y - oy * -x)*s)
   }
 
-  def rotateY(angle: Float): Quat =
-    rotateYInto(this, angle)
 
-  def rotateZInto(out: Quat, angle: Float): Quat = {
-    val halfAngle = angle*0.5f
-    val bz = Math.sin(halfAngle).toFloat
-    val bw = Math.cos(halfAngle).toFloat
 
-    out.set(x*bw + y*bz, y*bw - x*bz, z*bw + w*bz, w*bw - z*bz)
-  }
+  @inline
+  def *(s: Float): Quat =
+    Quat(x*s, y*s, z*s, w*s)
 
-  def rotateZ(angle: Float): Quat =
-    rotateZInto(this, angle)
+  @inline
+  def /(s: Float): Quat =
+    this*(1/s)
 
-  // re-normalizes this quaternion
-  def calculateWInto(out: Quat): Quat =
-    out.set(x, y, z, -Math.sqrt(Math.abs(1-x*x - y*y - z*z)).toFloat)
-
-  def calculateW: Quat =
-    calculateWInto(this)
-
+  @inline
   def dot(q: Quat): Float =
     x*q.x + y*q.y + z*q.z + w*q.w
 
-  // lerp
-  def slerpInto(out: Quat, b: Quat, t: Float): Quat = {
-    var bx = b.x; var by = b.y; var bz = b.z; var bw = b.w
-    val cosom = dot(b)
-    var scale0 = 0.0f; var scale1 = 0.0f
-    if(cosom < 0) {
-      bx = -bx
-      by = -by
-      bz = -bz
-      bw = -bw
-    }
-    if(1.0f - cosom > 0.0001) {
-      val omega = Math.acos(cosom).toFloat
-      val sinom = Math.sin(omega).toFloat
-      scale0 = Math.sin((1.0-t)*omega).toFloat/sinom
-      scale1 = Math.sin(t*omega).toFloat/sinom
+  @inline
+  def toAngleAxis: AngleAxis = {
+    val s = math.sqrt(1-w*w).toFloat
+    if(s < 0.001) {
+      // angle is very small and we risk dividing by zero. return identity rotation instead.
+      AngleAxis(0, Vec3(1, 0, 0))
     } else {
-      scale0 = 1.0f - t
-      scale1 = t
+      val s2 = 1/s
+      AngleAxis(2 * math.acos(w).toFloat, Vec3(x * s2, y * s2, z * s2))
     }
-
-    out.set(scale0*x + scale1*bx,
-            scale0*y + scale1*by,
-            scale0*z + scale1*bz,
-            scale0*w + scale1*bw)
   }
 
-  def slerp(b: Quat, t: Float): Quat =
-    slerpInto(this, b, t)
-
-  def invertInto(out: Quat): Quat = {
-    val dot = this.dot(this)
-    val invDot = if(dot != 0) 1/dot else 0
-    out.set(-x*invDot, -y*invDot, -z*invDot, w*invDot)
+  /**
+   * Converts this (normalized) quaternion into a matrix.
+   */
+  @inline
+  def toMat4 = {
+    val xx = x*x; val xy = x*y; val xz = x*z; val xw = x*w; val ww = w*w;
+    val yy = y*y; val yz = y*z; val yw = y*w; val zz = z*z; val zw = z*w;
+    Mat4(
+      1-2*yy-2*zz, 2*(xy-zw),   2*(xz+yw),   0,
+      2*(xy+zw),   1-2*xx-2*zz, 2*(yz-xw),   0,
+      2*(xz-yw),   2*(yz+xw),   1-2*xx-2*yy, 0,
+      0,           0,           0,           1)
   }
 
-  def invert: Quat =
-    invertInto(this)
-
-  def conjugateInto(q: Quat): Quat =
-    q.set(-x, -y, -z, w)
-
-  def conjugate: Quat =
-    this.conjugateInto(this)
-
-  def magnitude: Float =
-    Math.sqrt(magnitude).toFloat
-
-  def magSqr: Float =
-    x*x + y*y + z*z + w*w
-
-  def scale(s: Float): Quat = {
-    x *= s; y *= s; z *= s; w*= s
-    this
+  /**
+   * Converts this (normalized) quaternion into a matrix.
+   */
+  @inline
+  def toMat3 = {
+    val xx = x*x; val xy = x*y; val xz = x*z; val xw = x*w; val ww = w*w;
+    val yy = y*y; val yz = y*z; val yw = y*w; val zz = z*z; val zw = z*w;
+    Mat3(
+      1-2*yy-2*zz, 2*(xy-zw),   2*(xz+yw),
+      2*(xy+zw),   1-2*xx-2*zz, 2*(yz-xw),
+      2*(xz-yw),   2*(yz+xw),   1-2*xx-2*yy)
   }
 
-  def normalize: Quat =
-    scale(magnitude)
+  @inline
+  def conjugated =
+    Quat(-x, -y, -z, w)
 
-  // fromMat3
-  override def toString = s"Quat($x, $y, $z, $w)"
-  
-  def toEuler: Vec3 = {
-    val sqw = w*w
-    val sqx = x*x
-    val sqy = y*y
-    val sqz = z*z
-    val unit = sqx + sqy + sqz + sqw; // if normalised is one, otherwise is correction factor
-    val test = x*y + z*w
-    if (test > 0.499*unit) // singularity at north pole
-      Vec3(2 * math.atan2(x,w).toFloat, Math.PI.toFloat/2, 0)
-    else if (test < -0.499*unit) // singularity at south pole
-      Vec3(-2 * math.atan2(x,w).toFloat, -Math.PI.toFloat/2, 0)
-    else
-      Vec3(math.atan2(2*y*w-2*x*z , sqx - sqy - sqz + sqw).toFloat,
-           math.asin(2*test/unit).toFloat,
-           math.atan2(2*x*w-2*y*z , -sqx + sqy - sqz + sqw).toFloat)
+  @inline
+  def toVec4 =
+    Vec4(x, y, z, w)
+
+  @inline
+  def magSqr = x*x + y*y + z*z + w*w
+
+  @inline
+  def magnitude = math.sqrt(magSqr).toFloat
+
+  @inline
+  def normalized: Quat =
+    this / magnitude
+
+  @inline
+  def lerp(q: Quat, t: Float): Quat =
+    Quat(x + t*(q.x-x),
+         y + t*(q.y-y),
+         z + t*(q.z-z),
+         w + t*(q.w-w))
+
+  @inline
+  def lerp(q: Quat, t: Float, out: Quat): Quat =
+    out.set(x + t*(q.x-x),
+            y + t*(q.y-y),
+            z + t*(q.z-z),
+            w + t*(q.w-w))
+
+  def slerp(q: Quat, t: Float): Quat =
+    slerp(q, t, Quat())
+
+  def slerp(q: Quat, t: Float, out: Quat): Quat = {
+    // another shameless crib from http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp
+    var qx = q.x; var qy = q.y; var qz = q.z; var qw = q.w
+    // Calculate angle between them.
+    var cosHalfTheta = w*qw + x*qx + y*qy + z*qz
+    if(cosHalfTheta < 0) {
+      qw = -qw; qx = -qx; qy = -qy; qz = qz
+      cosHalfTheta = -cosHalfTheta
+    }
+    // if qa=qb or qa=-qb then theta = 0 and we can return qa
+    if (math.abs(cosHalfTheta) >= 1.0)
+      out.set(x, y, z, w)
+    else {
+      // Calculate temporary values.
+      val halfTheta = math.acos(cosHalfTheta).toFloat
+      val sinHalfTheta = math.sqrt(1.0 - cosHalfTheta * cosHalfTheta).toFloat
+      // if theta = 180 degrees then result is not fully defined
+      // we could rotate around any axis normal to qa or qb
+      if (math.abs(sinHalfTheta) < 0.001f)
+        out.set(x*0.5f + qx*0.5f, y*0.5f + qy*0.5f, z*0.5f + qz*0.5f, w*0.5f + qw*0.5f)
+      else {
+        val ratioA = math.sin((1 - t) * halfTheta).toFloat / sinHalfTheta
+        val ratioB = math.sin(t * halfTheta).toFloat / sinHalfTheta
+        //calculate Quaternion.
+        out.set(x * ratioA + qx * ratioB, y * ratioA + qy * ratioB, z * ratioA + qz * ratioB, w * ratioA + qw * ratioB)
+      }
+    }
   }
+
+  def copy(x: Float = x, y: Float = y, z: Float = z, w: Float = w) =
+    Quat(x,y,z,w)
+
+  override def toString =
+    s"Quat(${x}f,${y}f,${z}f,${w}f)"
+
+  override def equals(o: Any): Boolean = o match {
+    case v: Quat => x == v.x && y == v.y && z == v.z && w == v.w
+    case _ => false
+  }
+
+  override def hashCode: Int =
+    x.hashCode() * 31 +  y.hashCode() * 53 + z.hashCode() + w.hashCode() * 71
 }
 
 object Quat {
-  def fromEuler(x: Float, y: Float, z: Float): Quat = {
-    val sinX = math.sin(x*0.5f).toFloat
-    val cosX = math.cos(x*0.5f).toFloat
-    val sinY = math.sin(y*0.5f).toFloat
-    val cosY = math.cos(y*0.5f).toFloat
-    val sinZ = math.sin(z*0.5f).toFloat
-    val cosZ = math.cos(z*0.5f).toFloat
-    val cosXY = cosX*cosY
-    val sinXY = sinX*sinY
-    new Quat(sinZ*cosXY     - cosZ*sinXY,
-             cosZ*sinX*cosY + sinZ*cosX*sinY,
-             cosZ*cosX*sinY - sinZ*sinX*cosY,
-             cosZ*cosXY     + sinZ*sinXY)
+  def apply() =
+    new Quat(0, 0, 0, 1)
+
+  def apply(x: Float, y: Float, z: Float, w: Float) =
+    new Quat(x, y, z, w)
+
+  def fromAngleAxis(angle: Float, x: Float, y: Float, z: Float): Quat = {
+    val s = math.sin(angle/2).toFloat
+    Quat(x*s, y*s, z*s, math.cos(angle/2).toFloat)
   }
+
+  def fromAngleAxis(angle: Float, axis: Vec3): Quat =
+    fromAngleAxis(angle, axis.x, axis.y, axis.z)
 }

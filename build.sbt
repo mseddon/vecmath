@@ -1,4 +1,6 @@
 import sbt.Keys._
+import sbt.Tests
+
 
 lazy val root = project.in(file(".")).
   aggregate(vecMathJS, vecMathJVM).
@@ -7,13 +9,17 @@ lazy val root = project.in(file(".")).
     publishLocal := {}
   )
 
-lazy val vecMath = crossProject.in(file(".")).
-  settings(
-    scalaVersion := "2.11.6",
+lazy val vecMath = crossProject.in(file(".")).settings(
+    crossScalaVersions := Seq("2.10.6", "2.11.7"),
+    scalaVersion := "2.11.7",
     organization := "com.scryetek",
     name := "vecmath",
-    version := "0.2-SNAPSHOT",
+    version := "0.3.1",
     description := "A simple vector maths library for graphics programming.",
+
+    libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.5" % "test",
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-minSuccessfulTests", "5000"),
+
     homepage := Some(url("https://github.org/mseddon/vecmath")),
     scmInfo := Some(ScmInfo(
       url("https://github.com/mseddon/vecmath"),

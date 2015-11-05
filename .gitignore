@@ -5,6 +5,8 @@
 /jvm/target
 /js/target
 
+*.sc
+TODO.*
 
 ### Emacs template
 # -*- mode: gitignore; -*-

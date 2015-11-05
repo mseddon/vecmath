@@ -1,83 +1,196 @@
 package scryetek.vecmath
 
-import Math._
-/**
- * Created by Matt on 29/06/2014.
- */
-case class Vec3(var x: Float, var y: Float, var z: Float) {
-  def this(v: Vec3) = this(v.x, v.y, v.z)
+@inline
+final class Vec3(var x: Float, var y: Float, var z: Float) {
+  @inline
   def this() = this(0, 0, 0)
 
-  def set(x: Float, y: Float, z: Float): Vec3 = {
-    this.x = x; this.y = y; this.z = z;
+  @inline
+  def set(x: Float = this.x, y: Float = this.y, z: Float = this.z) = {
+    this.x = x
+    this.y = y
+    this.z = z
     this
   }
 
-  def set(v: Vec3): Vec3 = {
-    x = v.x; y = v.y; z = v.z
-    this
+  @inline
+  def set(v: Vec3): Vec3 =
+    set(v.x, v.y, v.z)
+
+  /** Adds two vectors. */
+  @inline
+  def +(v: Vec3): Vec3 =
+    Vec3(x + v.x, y + v.y, z + v.z)
+
+  /** Adds this vector to another vector into the target output vector. */
+  @inline
+  def add(v: Vec3, out: Vec3 = this): Vec3 =
+    out.set(x + v.x, y + v.y, z + v.z)
+
+  /** Adds this vector to another vector into the target output vector. */
+  @inline
+  def add(x: Float, y: Float, z: Float): Vec3 =
+    add(x, y, z, this)
+
+  /** Adds this vector to another vector into the target output vector. */
+  @inline
+  def add(x: Float, y: Float, z: Float, out: Vec3): Vec3 =
+    out.set(this.x + x, this.y + y, this.z + z)
+
+  /** Subtracts two vectors. */
+  @inline
+  def -(v: Vec3): Vec3 =
+    Vec3(x - v.x, y - v.y, z - v.z)
+
+  /** Subtracts a vector from this vector into the given output vector. */
+  @inline
+  def sub(v: Vec3, out: Vec3 = this): Vec3 =
+    out.set(x - v.x, y - v.y, z - v.z)
+
+  /** Subtracts a vector from this vector into the given output vector. */
+  @inline
+  def sub(x: Float, y: Float, z: Float, out: Vec3): Vec3 =
+    out.set(this.x - x, this.y - y, this.z - z)
+
+  /** Subtracts a vector from this vector into the given output vector. */
+  @inline
+  def sub(x: Float, y: Float, z: Float): Vec3 =
+    sub(x, y, z, this)
+
+  /** The dot product of two vectors. */
+  @inline
+  def *(v: Vec3): Float =
+    x*v.x + y*v.y + z*v.z
+
+  /** Returns the vector scaled by the given scalar. */
+  @inline
+  def *(s: Float): Vec3 =
+    Vec3(x*s, y*s, z*s)
+
+  /** Scales this vector by the given scalar, into the target output vector. */
+  def scale(s: Float, out: Vec3 = this): Vec3 =
+    out.set(x*s, y*s, z*s)
+
+  /** Returns the vector dividied by the given scalar. */
+  @inline
+  def /(s: Float): Vec3 = {
+    val f = 1/s
+    Vec3(x*f, y*f, z*f)
   }
 
-  def +(o: Vec3): Vec3  = Vec3(x+o.x, y+o.y, z+o.z)
-  def -(o: Vec3): Vec3  = Vec3(x-o.x, y-o.y, z-o.z)
-  def *(o: Vec3): Float = x*o.x + y*o.y + z*o.z
-  def *(s: Float): Vec3 = Vec3(x * s, y*s, z*s)
-  def /(s: Float): Vec3 = this * (1/s)
+  @inline
+  def div(s: Float, out: Vec3 = this): Vec3 =
+    scale(1/s, out)
 
-  def *(m: Mat4): Vec3 = {
-    val x1 = x * m.m00 + y * m.m01 + z + m.m02 + m.m03
-    val y1 = x * m.m10 + y * m.m11 + z + m.m12 + m.m13
-    val z1 = x * m.m20 + y * m.m21 + z + m.m22 + m.m23
-    val w = 1/(x * m.m30 + y * m.m31 + z * m.m23 + m.m33)
-    Vec3(x1*w, y1*w, z1*w)
+  @inline
+  def unary_- =
+    Vec3(-x, -y, -z)
+
+  @inline
+  def negate(out: Vec3 = this) =
+    out.set(-x, -y, -z)
+
+  /** Returns the squared magnitude (length<sup>2</sup>) of this vector. */
+  @inline
+  def magSqr = x*x + y*y + z*z
+
+  /** Returns the magnitude (length) of this vector. */
+  @inline
+  def magnitude = math.sqrt(magSqr).toFloat
+
+  /** Returns the normalized vector. */
+  @inline
+  def normalized = this / magnitude
+
+  @inline
+  def normalize(out: Vec3 = this) =
+    out.set(this).div(magnitude)
+
+  /** Returns the cross product of two vectors. */
+  @inline
+  def ⨯(v: Vec3): Vec3 =
+    Vec3(y*v.z - z*v.y, z*v.x - x*v.z, x*v.y - y*v.x)
+
+  /** Returns the cross product of two vectors. */
+  @inline
+  def crossed(v: Vec3): Vec3 = this ⨯ v
+
+  /** Cross products this vector and another into the target output vector. */
+  @inline
+  def cross(v: Vec3, out: Vec3 = this) =
+    out.set(y*v.z - z*v.y, z*v.x - x*v.z, x*v.y - y*v.x)
+
+  @inline
+  def max(v: Vec3): Vec3 =
+    Vec3(v.x max x, v.y max y, v.z max z)
+
+  @inline
+  def min(v: Vec3): Vec3 =
+    Vec3(v.x min x, v.y min y, v.z min z)
+
+  /**
+   * Return the quaternion that will align this vector with another.
+   */
+  def angleBetween(b: Vec3): Quat = {
+    val mag = magnitude*b.magnitude
+    val qx = y*b.z - z*b.y
+    val qy = z*b.x - x*b.z
+    val qz = x*b.y - y*b.x
+    val qw = mag+(this*b)
+
+    Quat(qx, qy, qz, qw).normalized
   }
 
-  def unary_- : Vec3 = Vec3(-x, -y, -z)
+  /**
+   * Return a vector reflecting this vector about the given normal.
+   * @note the normal must be normalized.
+   */
+  def reflected(normal: Vec3): Vec3 =
+    normal * 2*(this*normal) - this
 
-  def negate: Vec3 = {
-    x = -x; y = -y; z = -z;
-    this
+  /**
+   * Destructively reflect this vector about the given normal.
+   */
+  def reflect(normal: Vec3, out: Vec3 = this): Vec3 = {
+    val scale = 2*(this*normal)
+    out.set(normal.x*scale-x, normal.y*scale-y, normal.z*scale-z)
   }
 
-  def add(v: Vec3): Vec3 = {
-    x += v.x; y += v.y; z += v.z
-    this
+  /**
+   * Returns the linear interpolation of this vector with another, with t ranging from 0..1
+   */
+  @inline
+  def lerp(q: Vec3, t: Float): Vec3 =
+    Vec3(x + t*(q.x-x),
+         y + t*(q.y-y),
+         z + t*(q.z-z))
+
+  /**
+   * Destructively places the linear interpolation of this vector with another into out, with t ranging from 0..1
+   */
+  def lerp(q: Vec3, t: Float, out: Vec3): Vec3 =
+    out.set(x + t*(q.x-x),
+            y + t*(q.y-y),
+            z + t*(q.z-z))
+
+  @inline
+  def copy(x: Float = x, y: Float = y, z: Float = z): Vec3 =
+    Vec3(x, y, z)
+
+  override def toString =
+    s"Vec3(${x}f,${y}f,${z}f)"
+
+
+  override def equals(o: Any): Boolean = o match {
+    case v: Vec3 => x == v.x && y == v.y && z == v.z
+    case _ => false
   }
 
-  def sub(v: Vec3): Vec3 = {
-    x -= v.x; y -= v.y; z -= v.z
-    this
-  }
-
-  def scale(s: Float): Vec3 = {
-    x *= s; y *= s; z *= s;
-    this
-  }
-
-  def divide(s: Float) = scale(1/s)
-
-  def crossInto(out: Vec3, v: Vec3): Vec3 =
-    out.set(y*v.z - z*v.y,
-            z*v.x - x*v.z,
-            x*v.y - y*v.x)
-
-  def cross(v: Vec3): Vec3 =
-    set(y*v.z - z*v.y,
-        z*v.x - x*v.z,
-        x*v.y - y*v.x)
-
-  def magSqr: Float = x*x + y*y + z*z
-  def magnitude: Float = sqrt(magSqr).toFloat
-  def normalize: Vec3 = {
-    val len = 1/magnitude
-    x *= len; y *= len; z *= len
-    this
-  }
-
-  override def toString: String = s"Vec3($x, $y, $z)"
+  override def hashCode: Int =
+    x.hashCode()*19 +  y.hashCode()*23 + z.hashCode()*29
 }
 
 object Vec3 {
-  def apply(): Vec3 = new Vec3()
-  def apply(v: Vec3) = new Vec3(v)
+  def apply(x: Float, y: Float, z: Float) = new Vec3(x, y, z)
+  def apply() = new Vec3()
 }
